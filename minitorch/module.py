@@ -31,11 +31,15 @@ class Module:
 
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        self.training = True
+        for module in self.modules():
+            module.train()
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        self.training = False
+        for module in self.modules():
+            module.eval()
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -45,11 +49,21 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        raise NotImplementedError("Need to include this file from past assignment.")
+        res: Sequence[Tuple[str, Parameter]] = [
+            (k, v) for k, v in self.__dict__["_parameters"].items()
+        ]
+        for module_name, module in self._modules.items():
+            res += [
+                (f"{module_name}.{name}", v) for name, v in module.named_parameters()
+            ]
+        return res
 
     def parameters(self) -> Sequence[Parameter]:
         "Enumerate over all the parameters of this module and its descendents."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        res: Sequence[Parameter] = [v for v in self.__dict__["_parameters"].values()]
+        for _, module in self._modules.items():
+            res += module.parameters()
+        return res
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
@@ -81,6 +95,9 @@ class Module:
         if key in self.__dict__["_modules"]:
             return self.__dict__["_modules"][key]
         return None
+    
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError("Forward is not implemented")
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.forward(*args, **kwargs)
@@ -115,9 +132,9 @@ class Module:
 
 class Parameter:
     """
-    A Parameter is a special container stored in a `Module`.
+    A Parameter is a special container stored in a :class:`Module`.
 
-    It is designed to hold a `Variable`, but we allow it to hold
+    It is designed to hold a :class:`Variable`, but we allow it to hold
     any value for testing.
     """
 

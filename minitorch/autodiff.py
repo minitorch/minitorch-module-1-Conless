@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Tuple
 
 from typing_extensions import Protocol
+import warnings
 
 # ## Task 1.1
 # Central Difference calculation
@@ -22,8 +23,16 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError("Need to implement for Task 1.1")
+    result_f = f(*vals)
+    result_f_left = f(*[v - (epsilon if i == arg else 0) for i, v in enumerate(vals)])
+    result_f_right = f(*[v + (epsilon if i == arg else 0) for i, v in enumerate(vals)])
+    diff_left = (result_f - result_f_left) / epsilon
+    diff_right = (result_f_right - result_f) / epsilon
+    if abs(diff_left - diff_right) > 1.0:
+        warnings.warn(
+            f"Central difference approximation is not accurate: {diff_left} != {diff_right}"
+        )
+    return (diff_left + diff_right) / 2
 
 
 variable_count = 1
