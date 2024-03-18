@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Tuple
 
 from typing_extensions import Protocol
+import warnings
 
 # ## Task 1.1
 # Central Difference calculation
@@ -22,8 +23,9 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError("Need to implement for Task 1.1")
+    result_f_left = f(*[v - (epsilon if i == arg else 0) for i, v in enumerate(vals)])
+    result_f_right = f(*[v + (epsilon if i == arg else 0) for i, v in enumerate(vals)])
+    return (result_f_right - result_f_left) / (2 * epsilon)
 
 
 variable_count = 1
@@ -61,9 +63,30 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    q = [variable]
+    res = []
+    visit_count = {}
+    
+    while q:
+        u = q.pop()
+        for v in u.parents:
+            visit_count[v.unique_id] = visit_count.get(v.unique_id, 0) + 1
+            if visit_count[v.unique_id] == 1:
+                q.append(v)
+    
+    q.append(variable)
+    while q:
+        u = q.pop()
+        if u.is_constant():
+            continue
+        res.append(u)
+        for v in u.parents:
+            visit_count[v.unique_id] -= 1
+            if visit_count[v.unique_id] == 0:
+                print(u, u.unique_id, v, v.unique_id)
+                q.append(v)
 
+    return res
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
     """
@@ -76,8 +99,21 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    order = topological_sort(variable)
+    deriv_map = {}
+    deriv_map.update({variable.unique_id: deriv})
+    for u in order:
+        if u.is_leaf():
+            continue
+        for v, d in u.chain_rule(deriv_map.get(u.unique_id)):
+            print(u, u.unique_id, v, v.unique_id, d)
+            if v.is_leaf():
+                v.accumulate_derivative(d)
+            else:
+                if v.unique_id in deriv_map:
+                    deriv_map[v.unique_id] += d
+                else:
+                    deriv_map.update({v.unique_id: d})
 
 
 @dataclass
