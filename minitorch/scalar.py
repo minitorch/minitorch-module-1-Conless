@@ -165,7 +165,7 @@ class Scalar:
 
         # Call the backward function
         result = h.last_fn.backward(h.ctx, d_output)
-        return zip(h.inputs, result)
+        return zip(h.inputs, result) if len(h.inputs) > 1 else [(h.inputs[0], result)]
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """
